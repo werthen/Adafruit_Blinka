@@ -123,13 +123,24 @@ class MCP2221:
                               0x20,  # next byte is clock divider
                               12000000 // baudrate - 3]))
 
-    def i2c_writeto(self, address, buffer, *, start=0, end=None):
+    def _i2c_writebuffer(self, address, cmd, buffer, start=0, end=None):
         end = end if end else len(buffer)
-        self._hid_xfer(bytes([0x90,                    # i2c write data
-                              end - start & 0xFF,      # xfer length lo byte
-                              end - start >> 8 & 0xFF, # xfer length hi byte
-                              address << 1]) +         # i2c slave address
-                              buffer[start:end])       # user data to be sent
+        total_size = end - start
+        while (end - start) > 0:
+            writing = min(end - start,  60)
+            response = self._hid_xfer(bytes([cmd,           # i2c write data
+                                  total_size & 0xFF,        # xfer length lo byte
+                                  (total_size >> 8) & 0xFF, # xfer length hi byte
+                                  address << 1]) +          # i2c slave address
+                                  buffer[start:(start+writing)])       # user data to be sent
+            print(response[0:2])
+            if response[1] != 0x0:
+                time.sleep(0.001)
+                continue  # retry!
+            start += writing
+
+    def i2c_writeto(self, address, buffer, *, start=0, end=None):
+        self._i2c_writebuffer(address, 0x90, buffer, start, end)
 
     def i2c_readfrom_into(self, address, buffer, *, start=0, end=None):
         end = end if end else len(buffer)
