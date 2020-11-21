@@ -142,6 +142,7 @@ spiPorts = (
     (0, SCLK, MOSI, MISO),
     (1, SCLK_1, MOSI_1, MISO_1),
     (2, SCLK_2, MOSI_2, MISO_2),
+    (3, Pin(3), Pin(2), Pin(1)),
 )
 
 # ordered as uartId, txId, rxId
